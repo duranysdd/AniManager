@@ -1,30 +1,23 @@
-import 'package:animanager/RegistroS.dart';
 import 'package:flutter/material.dart';
-import 'RegistroS.dart'; 
-
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class RegistroScreen extends StatefulWidget {
+  const RegistroScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegistroScreen> createState() => _RegistroScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _RegistroScreenState extends State<RegistroScreen> {
   bool _obscureText = true;
 
   @override
   Widget build(BuildContext context) {
-    var inputDecoration = InputDecoration(
-                          hintText: "Usuario",
-                          prefixIcon: const Icon(Icons.person_outline, color: Colors.black54),
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 15),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        );
-    var inputDecoration2 = inputDecoration;
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      extendBodyBehindAppBar: true,
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -41,17 +34,19 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  height: 120,
-                  width: 120,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white24,
-                  ),
-                  child: const Icon(
-                    Icons.person, 
-                    size: 80,
+                const Text(
+                  "Crea tu Cuenta",
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
                     color: Colors.white,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black38,
+                        blurRadius: 5,
+                        offset: Offset(0, 2),
+                      )
+                    ]
                   ),
                 ),
                 const SizedBox(height: 40),
@@ -62,23 +57,45 @@ class _LoginScreenState extends State<LoginScreen> {
                     borderRadius: BorderRadius.circular(25),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 5),
+                        color: Colors.black.withOpacity(0.15),
+                        blurRadius: 15,
+                        offset: const Offset(0, 8),
                       ),
                     ],
                   ),
                   child: Column(
                     children: [
                       TextField(
-                        decoration: inputDecoration2,
+                        keyboardType: TextInputType.name,
+                        decoration: InputDecoration(
+                          hintText: "Nombre Completo",
+                          prefixIcon: const Icon(Icons.badge, color: Color(0xFFFF7043)),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 15),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      TextField(
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: InputDecoration(
+                          hintText: "Correo Electrónico",
+                          prefixIcon: const Icon(Icons.email, color: Color(0xFFFF7043)),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 15),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 20),
                       TextField(
                         obscureText: _obscureText,
                         decoration: InputDecoration(
                           hintText: "Contraseña",
-                          prefixIcon: const Icon(Icons.lock_outline, color: Colors.black54),
+                          prefixIcon: const Icon(Icons.lock, color: Color(0xFFFF7043)),
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 20, vertical: 15),
                           border: OutlineInputBorder(
@@ -105,7 +122,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(30),
                           gradient: const LinearGradient(
-                            colors: [Color(0xFFFF7043), Color(0xFFFFD54F)],
+                            colors: [Color(0xFFFF7043), Color(0xFFFFD54F)], 
                           ),
                         ),
                         child: ElevatedButton(
@@ -121,48 +138,25 @@ class _LoginScreenState extends State<LoginScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 15),
                           ),
                           child: const Text(
-                            "Iniciar Sesión",
+                            "Registrarse",
                             style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ),
                       const SizedBox(height: 15),
+                      // Enlace para volver
                       TextButton(
                         onPressed: () {
+                          Navigator.pop(context);
                         },
                         child: const Text(
-                          "Recuperar Contraseña",
+                          "¿Ya tienes cuenta? Inicia Sesión",
                           style: TextStyle(color: Colors.black54),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 30),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "¿No tienes cuenta?",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const RegistroScreen()),
-                        );
-                      },
-                      child: const Text(
-                        "Regístrate",
-                        style: TextStyle(
-                          color: Colors.blueAccent,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    )
-                  ],
-                )
               ],
             ),
           ),
