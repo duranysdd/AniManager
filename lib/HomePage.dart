@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'TareasPage.dart';
+import 'Notificaciones.dart';
 import 'dart:math';
 
 class AniManagerInicio extends StatefulWidget {
@@ -34,7 +36,22 @@ class _AniManagerInicioState extends State<AniManagerInicio>
     setState(() => _selectedIndex = index);
   }
 
-  void _openPage(String name) {
+void _openPage(String name) {
+  if (name == "Tareas") {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TareasPage(darkMode: _darkMode),
+      ),
+    );
+  } else if (name == "Notificaciones") {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => NotificacionesScreen(darkMode: _darkMode),
+      ),
+    );
+  } else {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text("Abrir página: $name"),
@@ -43,6 +60,8 @@ class _AniManagerInicioState extends State<AniManagerInicio>
       ),
     );
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
