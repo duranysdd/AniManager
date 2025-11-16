@@ -1,4 +1,9 @@
+import 'package:animanager/HomePage.dart';
+import 'package:animanager/InicioS.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'InicioS.dart';
+
 class RegistroScreen extends StatefulWidget {
   const RegistroScreen({super.key});
 
@@ -7,23 +12,57 @@ class RegistroScreen extends StatefulWidget {
 }
 
 class _RegistroScreenState extends State<RegistroScreen> {
-  bool _obscureText = true;
+  final correoController = TextEditingController();
+  final passController = TextEditingController();
+  final pass2Controller = TextEditingController();
+
+  bool _obscure1 = true;
+  bool _obscure2 = true;
+
+  Future<void> registrar() async {
+    if (passController.text != pass2Controller.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Las contraseñas no coinciden")),
+      );
+      return;
+    }
+
+    try {
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: correoController.text.trim(),
+        password: passController.text.trim(),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+    } on FirebaseAuthException catch (e) {
+      String mensaje = "Error desconocido";
+
+      if (e.code == 'weak-password') mensaje = "La contraseña es muy débil";
+      if (e.code == 'email-already-in-use')
+        mensaje = "Este correo ya está registrado";
+      if (e.code == 'invalid-email') mensaje = "Correo inválido";
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(mensaje)),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    var decoration = InputDecoration(
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+    );
+
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      extendBodyBehindAppBar: true,
       body: Container(
-        width: double.infinity,
-        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFFFFA726), Color(0xFFFFEB3B)], 
+            colors: [Color(0xFFFFA726), Color(0xFFFFEB3B)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -31,133 +70,85 @@ class _RegistroScreenState extends State<RegistroScreen> {
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 25),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  "Crea tu Cuenta",
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black38,
-                        blurRadius: 5,
-                        offset: Offset(0, 2),
-                      )
-                    ]
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                  color: Colors.white, borderRadius: BorderRadius.circular(25)),
+              child: Column(
+                children: [
+                  const Text(
+                    "Crear cuenta",
+                    style: TextStyle(
+                      fontSize: 25,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 40),
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(25),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
-                        blurRadius: 15,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: correoController,
+                    decoration: decoration.copyWith(
+                      hintText: "Correo",
+                      prefixIcon: const Icon(Icons.mail_outline),
+                    ),
                   ),
-                  child: Column(
-                    children: [
-                      TextField(
-                        keyboardType: TextInputType.name,
-                        decoration: InputDecoration(
-                          hintText: "Nombre Completo",
-                          prefixIcon: const Icon(Icons.badge, color: Color(0xFFFF7043)),
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 15),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: passController,
+                    obscureText: _obscure1,
+                    decoration: decoration.copyWith(
+                      hintText: "Contraseña",
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                            _obscure1 ? Icons.visibility_off : Icons.visibility),
+                        onPressed: () =>
+                            setState(() => _obscure1 = !_obscure1),
                       ),
-                      const SizedBox(height: 20),
-                      TextField(
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: InputDecoration(
-                          hintText: "Correo Electrónico",
-                          prefixIcon: const Icon(Icons.email, color: Color(0xFFFF7043)),
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 15),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      TextField(
-                        obscureText: _obscureText,
-                        decoration: InputDecoration(
-                          hintText: "Contraseña",
-                          prefixIcon: const Icon(Icons.lock, color: Color(0xFFFF7043)),
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 15),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureText
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                              color: Colors.black54,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscureText = !_obscureText;
-                              });
-                            },
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 30),
-                      Container(
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(30),
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFFFF7043), Color(0xFFFFD54F)], 
-                          ),
-                        ),
-                        child: ElevatedButton(
-                          onPressed: () {
-                          },
-                          style: ElevatedButton.styleFrom(
-                            elevation: 0,
-                            backgroundColor: Colors.transparent,
-                            shadowColor: Colors.transparent,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 15),
-                          ),
-                          child: const Text(
-                            "Registrarse",
-                            style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-                      // Enlace para volver
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        child: const Text(
-                          "¿Ya tienes cuenta? Inicia Sesión",
-                          style: TextStyle(color: Colors.black54),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: pass2Controller,
+                    obscureText: _obscure2,
+                    decoration: decoration.copyWith(
+                      hintText: "Repetir contraseña",
+                      prefixIcon: const Icon(Icons.lock_reset),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                            _obscure2 ? Icons.visibility_off : Icons.visibility),
+                        onPressed: () =>
+                            setState(() => _obscure2 = !_obscure2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(30),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFF7043), Color(0xFFFFD54F)],
+                      ),
+                    ),
+                    child: ElevatedButton(
+                      onPressed: registrar,
+                      style: ElevatedButton.styleFrom(
+                        elevation: 0,
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                      ),
+                      child: const Text(
+                        "Registrarse",
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

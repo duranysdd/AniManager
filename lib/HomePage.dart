@@ -1,4 +1,7 @@
+import 'package:animanager/InicioS.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'InicioS.dart';
 import 'TareasPage.dart';
 import 'Notificaciones.dart';
 import 'dart:math';
@@ -22,7 +25,8 @@ class _AniManagerInicioState extends State<AniManagerInicio>
     super.initState();
     _controller =
         AnimationController(vsync: this, duration: const Duration(seconds: 18))
-          ..repeat(); // la velocidad de las particulas 
+          ..repeat();
+
     _particles = List.generate(25, (_) => _Particle());
   }
 
@@ -36,32 +40,31 @@ class _AniManagerInicioState extends State<AniManagerInicio>
     setState(() => _selectedIndex = index);
   }
 
-void _openPage(String name) {
-  if (name == "Tareas") {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => TareasPage(darkMode: _darkMode),
-      ),
-    );
-  } else if (name == "Notificaciones") {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => NotificacionesScreen(darkMode: _darkMode),
-      ),
-    );
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Abrir página: $name"),
-        backgroundColor: Colors.orange.shade700,
-        duration: const Duration(seconds: 1),
-      ),
-    );
+  void _openPage(String name) {
+    if (name == "Tareas") {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TareasPage(darkMode: _darkMode),
+        ),
+      );
+    } else if (name == "Notificaciones") {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => NotificacionesScreen(darkMode: _darkMode),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Abrir página: $name"),
+          backgroundColor: Colors.orange.shade700,
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -108,7 +111,6 @@ void _openPage(String name) {
   }
 }
 
-// Acá inicia el espacio de los botones
 class _HomeContent extends StatelessWidget {
   final List<_Particle> particles;
   final AnimationController controller;
@@ -132,8 +134,11 @@ class _HomeContent extends StatelessWidget {
           animation: controller,
           builder: (_, __) {
             return CustomPaint(
-              painter: _ParticlePainter(particles, controller.value,
-                  darkMode ? Colors.orange.shade200 : Colors.orange),
+              painter: _ParticlePainter(
+                particles,
+                controller.value,
+                darkMode ? Colors.orange.shade200 : Colors.orange,
+              ),
               child: Container(),
             );
           },
@@ -143,8 +148,7 @@ class _HomeContent extends StatelessWidget {
             children: [
               _HeaderSection(darkMode: darkMode),
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
                 child: Column(
                   children: [
                     _AnimatedCard(
@@ -175,7 +179,6 @@ class _HomeContent extends StatelessWidget {
   }
 }
 
-// Esta madre es el header
 class _HeaderSection extends StatelessWidget {
   final bool darkMode;
 
@@ -229,7 +232,7 @@ class _HeaderSection extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 30,
                   fontWeight: FontWeight.w800,
-                  color: Colors.white, // modo negrito
+                  color: Colors.white,
                   letterSpacing: 1.2,
                   shadows: [
                     Shadow(
@@ -241,18 +244,10 @@ class _HeaderSection extends StatelessWidget {
                 ),
               ),
             ),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 600),
-              transform: Matrix4.translationValues(
-                darkMode ? 10 : -10,
-                0,
-                0,
-              ),
-              child: const Icon(
-                Icons.agriculture_rounded,
-                color: Colors.white,
-                size: 38,
-              ),
+            const Icon(
+              Icons.agriculture_rounded,
+              color: Colors.white,
+              size: 38,
             ),
           ],
         ),
@@ -261,8 +256,6 @@ class _HeaderSection extends StatelessWidget {
   }
 }
 
-
-// Esto es lo de la configuración
 class _SettingsPage extends StatelessWidget {
   final bool darkMode;
   final Function(bool) onToggleDarkMode;
@@ -271,6 +264,16 @@ class _SettingsPage extends StatelessWidget {
     required this.darkMode,
     required this.onToggleDarkMode,
   });
+
+  Future<void> _logout(BuildContext context) async {
+    await FirebaseAuth.instance.signOut();
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -299,6 +302,7 @@ class _SettingsPage extends StatelessWidget {
               activeColor: Colors.deepOrange,
             ),
             const Divider(),
+
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.deepOrange),
               title: Text(
@@ -307,11 +311,7 @@ class _SettingsPage extends StatelessWidget {
                   color: darkMode ? Colors.white70 : Colors.black,
                 ),
               ),
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Sesión cerrada")),
-                );
-              },
+              onTap: () => _logout(context),
             ),
           ],
         ),
@@ -320,7 +320,6 @@ class _SettingsPage extends StatelessWidget {
   }
 }
 
-// Animaciones
 class _AnimatedCard extends StatefulWidget {
   final Color color;
   final IconData icon;
@@ -348,8 +347,9 @@ class _AnimatedCardState extends State<_AnimatedCard> {
   @override
   Widget build(BuildContext context) {
     final bgColor = widget.darkMode ? Colors.grey.shade900 : Colors.white;
-    final textColor =
-        widget.darkMode ? Colors.white.withOpacity(0.9) : const Color(0xFF5A3E1B);
+    final textColor = widget.darkMode
+        ? Colors.white.withOpacity(0.9)
+        : const Color(0xFF5A3E1B);
 
     return GestureDetector(
       onTapDown: (_) => setState(() => _scale = 0.97),
@@ -415,7 +415,6 @@ class _AnimatedCardState extends State<_AnimatedCard> {
   }
 }
 
-// Estas son las particulas, no le muevan nada porque alch poco entendi del tuto
 class _Particle {
   late double x;
   late double y;
