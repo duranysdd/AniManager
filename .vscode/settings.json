@@ -1,3 +1,4 @@
 {
-    "cmake.sourceDirectory": "C:/Users/csanc/Develop/9CIDGS/AniManager/AniManager/linux"
+    "cmake.sourceDirectory": "C:/Users/csanc/Develop/9CIDGS/AniManager/AniManager/linux",
+    "java.configuration.updateBuildConfiguration": "interactive"
 }

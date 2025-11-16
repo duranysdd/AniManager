@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "178608959958",
+    "project_id": "animanager-805bc",
+    "storage_bucket": "animanager-805bc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:178608959958:android:48392f185482ea9c3df477",
+        "android_client_info": {
+          "package_name": "com.example.animanager"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCumUt6xVRFjnmeNu0aHJDHnM65s3uPTpI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
