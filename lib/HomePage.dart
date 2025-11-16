@@ -1,7 +1,7 @@
 import 'package:animanager/InicioS.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'InicioS.dart'; // <<--- Asegúrate que este archivo existe
+import 'InicioS.dart';
 import 'TareasPage.dart';
 import 'Notificaciones.dart';
 import 'dart:math';
@@ -111,8 +111,6 @@ class _AniManagerInicioState extends State<AniManagerInicio>
   }
 }
 
-// ---------------- HOME CONTENT ----------------
-
 class _HomeContent extends StatelessWidget {
   final List<_Particle> particles;
   final AnimationController controller;
@@ -180,8 +178,6 @@ class _HomeContent extends StatelessWidget {
     );
   }
 }
-
-// ---------------- HEADER ----------------
 
 class _HeaderSection extends StatelessWidget {
   final bool darkMode;
@@ -260,8 +256,6 @@ class _HeaderSection extends StatelessWidget {
   }
 }
 
-// ---------------- SETTINGS PAGE ----------------
-
 class _SettingsPage extends StatelessWidget {
   final bool darkMode;
   final Function(bool) onToggleDarkMode;
@@ -309,7 +303,6 @@ class _SettingsPage extends StatelessWidget {
             ),
             const Divider(),
 
-            // ------------ LOGOUT ------------
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.deepOrange),
               title: Text(
@@ -326,8 +319,6 @@ class _SettingsPage extends StatelessWidget {
     );
   }
 }
-
-// ---------------- ANIMACIONES Y PARTICULAS ----------------
 
 class _AnimatedCard extends StatefulWidget {
   final Color color;
@@ -423,8 +414,6 @@ class _AnimatedCardState extends State<_AnimatedCard> {
     );
   }
 }
-
-// -------- PARTICULAS --------
 
 class _Particle {
   late double x;

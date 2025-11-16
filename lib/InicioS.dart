@@ -23,8 +23,6 @@ class _LoginScreenState extends State<LoginScreen> {
         email: correoController.text.trim(),
         password: passController.text.trim(),
       );
-
-      // 👍 Aquí navega al Home
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const AniManagerInicio()),
