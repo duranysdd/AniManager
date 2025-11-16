@@ -72,4 +72,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'animanager-805bc.firebasestorage.app',
     iosBundleId: 'com.example.animanager',
   );
+
 }
