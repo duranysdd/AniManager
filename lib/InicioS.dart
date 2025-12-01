@@ -1,7 +1,7 @@
 import 'package:animanager/HomePage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'HomePage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'RegistroS.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -19,10 +19,32 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> login() async {
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      UserCredential cred = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
         email: correoController.text.trim(),
         password: passController.text.trim(),
       );
+
+      String uid = cred.user!.uid;
+
+      DocumentSnapshot workerDoc = await FirebaseFirestore.instance
+          .collection("workers")
+          .doc(uid)
+          .get();
+
+      if (!workerDoc.exists) {
+        await FirebaseAuth.instance.signOut();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                "Tu cuenta aun no ha sido aceptada por el administrador"),
+          ),
+        );
+
+        return;
+      }
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const AniManagerInicio()),
@@ -31,12 +53,12 @@ class _LoginScreenState extends State<LoginScreen> {
       String mensaje = "Error desconocido";
 
       if (e.code == 'user-not-found') mensaje = "Usuario no encontrado";
-      if (e.code == 'wrong-password') mensaje = "Contraseña incorrecta";
-      if (e.code == 'invalid-email') mensaje = "Correo inválido";
+      if (e.code == 'wrong-password') mensaje = "Contrasenia incorrecta";
+      if (e.code == 'invalid-email') mensaje = "Correo invalido";
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(mensaje),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(mensaje)),
+      );
     }
   }
 
@@ -95,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         controller: passController,
                         obscureText: _obscureText,
                         decoration: InputDecoration(
-                          hintText: "Contraseña",
+                          hintText: "Contrasenia",
                           prefixIcon:
                               const Icon(Icons.lock_outline, color: Colors.black54),
                           contentPadding: const EdgeInsets.symmetric(
@@ -105,7 +127,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _obscureText ? Icons.visibility_off : Icons.visibility,
+                              _obscureText
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
                               color: Colors.black54,
                             ),
                             onPressed: () =>
@@ -134,7 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 15),
                           ),
                           child: const Text(
-                            "Iniciar Sesión",
+                            "Iniciar Sesion",
                             style: TextStyle(
                               fontSize: 18,
                               color: Colors.white,
@@ -153,7 +177,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           );
                         },
                         child: const Text(
-                          "Regístrate",
+                          "Registrate",
                           style: TextStyle(
                             color: Colors.blueAccent,
                             fontWeight: FontWeight.bold,
@@ -171,5 +195,3 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-
-// Esta nota solo la hago para poder hacer push

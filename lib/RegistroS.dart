@@ -2,7 +2,7 @@ import 'package:animanager/HomePage.dart';
 import 'package:animanager/InicioS.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'InicioS.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RegistroScreen extends StatefulWidget {
   const RegistroScreen({super.key});
@@ -22,16 +22,28 @@ class _RegistroScreenState extends State<RegistroScreen> {
   Future<void> registrar() async {
     if (passController.text != pass2Controller.text) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Las contraseñas no coinciden")),
+        const SnackBar(content: Text("Las contrasenias no coinciden")),
       );
       return;
     }
 
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      // Crear usuario en Firebase Auth
+      UserCredential cred = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
         email: correoController.text.trim(),
         password: passController.text.trim(),
       );
+
+      // UID del usuario
+      String uid = cred.user!.uid;
+
+      // Guardar datos en Firestore 
+      await FirebaseFirestore.instance.collection("users").doc(uid).set({
+        "uid": uid,
+        "email": correoController.text.trim(),
+        "createdAt": DateTime.now(),
+      });
 
       Navigator.pushReplacement(
         context,
@@ -40,10 +52,10 @@ class _RegistroScreenState extends State<RegistroScreen> {
     } on FirebaseAuthException catch (e) {
       String mensaje = "Error desconocido";
 
-      if (e.code == 'weak-password') mensaje = "La contraseña es muy débil";
-      if (e.code == 'email-already-in-use')
-        mensaje = "Este correo ya está registrado";
-      if (e.code == 'invalid-email') mensaje = "Correo inválido";
+      if (e.code == "weak-password") mensaje = "La contrasenia es muy debil";
+      if (e.code == "email-already-in-use")
+        mensaje = "Este correo ya esta registrado";
+      if (e.code == "invalid-email") mensaje = "Correo invalido";
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(mensaje)),
@@ -55,7 +67,8 @@ class _RegistroScreenState extends State<RegistroScreen> {
   Widget build(BuildContext context) {
     var decoration = InputDecoration(
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
     );
 
     return Scaffold(
@@ -73,7 +86,9 @@ class _RegistroScreenState extends State<RegistroScreen> {
             child: Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                  color: Colors.white, borderRadius: BorderRadius.circular(25)),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(25),
+              ),
               child: Column(
                 children: [
                   const Text(
@@ -96,11 +111,14 @@ class _RegistroScreenState extends State<RegistroScreen> {
                     controller: passController,
                     obscureText: _obscure1,
                     decoration: decoration.copyWith(
-                      hintText: "Contraseña",
+                      hintText: "Contrasenia",
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         icon: Icon(
-                            _obscure1 ? Icons.visibility_off : Icons.visibility),
+                          _obscure1
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
                         onPressed: () =>
                             setState(() => _obscure1 = !_obscure1),
                       ),
@@ -111,11 +129,14 @@ class _RegistroScreenState extends State<RegistroScreen> {
                     controller: pass2Controller,
                     obscureText: _obscure2,
                     decoration: decoration.copyWith(
-                      hintText: "Repetir contraseña",
+                      hintText: "Repetir contrasenia",
                       prefixIcon: const Icon(Icons.lock_reset),
                       suffixIcon: IconButton(
                         icon: Icon(
-                            _obscure2 ? Icons.visibility_off : Icons.visibility),
+                          _obscure2
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
                         onPressed: () =>
                             setState(() => _obscure2 = !_obscure2),
                       ),
@@ -141,9 +162,10 @@ class _RegistroScreenState extends State<RegistroScreen> {
                       child: const Text(
                         "Registrarse",
                         style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold),
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
