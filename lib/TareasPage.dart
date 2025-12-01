@@ -15,27 +15,35 @@ class _TareasPageState extends State<TareasPage>
   late AnimationController _controller;
   late List<_Particle> _particles;
 
-  // Lista simulada de tareas (con descripción)
+  // Lista simulada de tareas (con comentario)
   final List<Map<String, dynamic>> tareas = [
     {
       "titulo": "Vacunar res #12",
       "fecha": "2025-11-10",
-      "descripcion": "Aplicar la vacuna anual contra fiebre aftosa a la res #12. Revisar también temperatura corporal y apetito.",
-      "completada": false
+      "descripcion":
+          "Aplicar la vacuna anual contra fiebre aftosa a la res #12. Revisar también temperatura corporal y apetito.",
+      "completada": false,
+      "comentario": ""
     },
     {
       "titulo": "Limpieza del corral",
       "fecha": "2025-11-12",
-      "descripcion": "Retirar desechos del área de alimentación y colocar nueva paja en los corrales.",
-      "completada": true
+      "descripcion":
+          "Retirar desechos del área de alimentación y colocar nueva paja en los corrales.",
+      "completada": true,
+      "comentario": ""
     },
     {
       "titulo": "Revisión veterinaria",
       "fecha": "2025-11-15",
-      "descripcion": "El veterinario realizará un chequeo general de salud del ganado y revisará signos de parásitos.",
-      "completada": false
+      "descripcion":
+          "El veterinario realizará un chequeo general de salud del ganado y revisará signos de parásitos.",
+      "completada": false,
+      "comentario": ""
     },
   ];
+
+  final TextEditingController _comentarioCtrl = TextEditingController();
 
   @override
   void initState() {
@@ -52,118 +60,198 @@ class _TareasPageState extends State<TareasPage>
     super.dispose();
   }
 
-  void _toggleCompletada(int index) {
-    setState(() {
-      tareas[index]["completada"] = !tareas[index]["completada"];
-    });
+  // Confirmación antes de marcar completada
+  Future<void> _confirmarToggle(int index) async {
+    final tarea = tareas[index];
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(
+            tarea["completada"]
+                ? "¿Marcar como pendiente?"
+                : "¿Marcar como completada?",
+          ),
+          content: Text(
+            tarea["completada"]
+                ? "La tarea volverá a estado pendiente."
+                : "La tarea se marcará como completada.",
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text("Cancelar")),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("Aceptar"),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm == true) {
+      setState(() {
+        tareas[index]["completada"] = !tareas[index]["completada"];
+      });
+    }
   }
 
   void _mostrarDetalles(Map<String, dynamic> tarea) {
     final darkMode = widget.darkMode;
+    _comentarioCtrl.text = tarea["comentario"];
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: darkMode ? const Color(0xFF1E1E1E) : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
       ),
       builder: (context) {
         return Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 50,
-                  height: 5,
-                  margin: const EdgeInsets.only(bottom: 15),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade400,
-                    borderRadius: BorderRadius.circular(5),
+          padding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 24,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 50,
+                    height: 5,
+                    margin: const EdgeInsets.only(bottom: 18),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade400,
+                      borderRadius: BorderRadius.circular(5),
+                    ),
                   ),
                 ),
-              ),
-              Text(
-                tarea["titulo"],
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: darkMode ? Colors.orange.shade200 : Colors.deepOrange,
+                Text(
+                  tarea["titulo"],
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color:
+                        darkMode ? Colors.orange.shade200 : Colors.deepOrange,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Icon(Icons.calendar_month_rounded,
+
+                const SizedBox(height: 10),
+
+                Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_month_rounded,
                       size: 20,
-                      color: darkMode
-                          ? Colors.orange.shade200
-                          : Colors.deepOrange),
-                  const SizedBox(width: 6),
-                  Text(
-                    "Fecha: ${tarea["fecha"]}",
-                    style: TextStyle(
-                      color: darkMode
-                          ? Colors.grey.shade400
-                          : Colors.grey.shade700,
-                      fontSize: 14,
+                      color:
+                          darkMode ? Colors.orange.shade200 : Colors.deepOrange,
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Text(
-                tarea["descripcion"],
-                style: TextStyle(
-                  fontSize: 16,
-                  height: 1.5,
-                  color: darkMode ? Colors.white70 : Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 25),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    tarea["completada"]
-                        ? "✅ Completada"
-                        : "🕓 Pendiente",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: tarea["completada"]
-                          ? Colors.green
-                          : Colors.deepOrange,
-                    ),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      _toggleCompletada(tareas.indexOf(tarea));
-                    },
-                    icon: Icon(
-                      tarea["completada"]
-                          ? Icons.undo_rounded
-                          : Icons.check_circle_rounded,
-                      color: Colors.white,
-                    ),
-                    label: Text(tarea["completada"]
-                        ? "Marcar como pendiente"
-                        : "Marcar como completada"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: tarea["completada"]
-                          ? Colors.grey
-                          : Colors.deepOrange,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                    const SizedBox(width: 6),
+                    Text(
+                      "Fecha: ${tarea["fecha"]}",
+                      style: TextStyle(
+                        color: darkMode
+                            ? Colors.grey.shade400
+                            : Colors.grey.shade700,
+                        fontSize: 14,
                       ),
                     ),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+
+                Text(
+                  tarea["descripcion"],
+                  style: TextStyle(
+                    fontSize: 16,
+                    height: 1.5,
+                    color: darkMode ? Colors.white70 : Colors.black87,
                   ),
-                ],
-              ),
-            ],
+                ),
+
+                const SizedBox(height: 25),
+
+                // COMENTARIOS X TAREA :)
+                Text(
+                  "Comentarios:",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: darkMode ? Colors.orange.shade100 : Colors.orange,
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                TextField(
+                  controller: _comentarioCtrl,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText: "Añadir un comentario...",
+                    filled: true,
+                    fillColor:
+                        darkMode ? Colors.grey.shade800 : Colors.grey.shade200,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onChanged: (value) {
+                    tarea["comentario"] = value;
+                  },
+                ),
+
+                const SizedBox(height: 25),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      tarea["completada"] ? "✅ Completada" : "🕓 Pendiente",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: tarea["completada"]
+                            ? Colors.green
+                            : Colors.deepOrange,
+                      ),
+                    ),
+
+                    // BOTÓN DE  CONFIRMACIÓN DE TARA <3
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _confirmarToggle(tareas.indexOf(tarea));
+                      },
+                      icon: Icon(
+                        tarea["completada"]
+                            ? Icons.undo_rounded
+                            : Icons.check_circle_rounded,
+                        color: Colors.white,
+                      ),
+                      label: Text(
+                        tarea["completada"]
+                            ? "Marcar como pendiente"
+                            : "Marcar como completada",
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: tarea["completada"]
+                            ? Colors.grey
+                            : Colors.deepOrange,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -173,7 +261,8 @@ class _TareasPageState extends State<TareasPage>
   @override
   Widget build(BuildContext context) {
     final darkMode = widget.darkMode;
-    final bgColor = darkMode ? const Color(0xFF121212) : const Color(0xFFFFF4E6);
+    final bgColor =
+        darkMode ? const Color(0xFF121212) : const Color(0xFFFFF4E6);
     final textColor = darkMode ? Colors.white : const Color(0xFF5A3E1B);
 
     return Scaffold(
@@ -187,7 +276,6 @@ class _TareasPageState extends State<TareasPage>
       ),
       body: Stack(
         children: [
-          // Fondo animado
           AnimatedBuilder(
             animation: _controller,
             builder: (_, __) {
@@ -202,7 +290,6 @@ class _TareasPageState extends State<TareasPage>
             },
           ),
 
-          // Lista de tareas
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: ListView.builder(
@@ -229,13 +316,6 @@ class _TareasPageState extends State<TareasPage>
                             width: 6,
                           ),
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 6,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
                       ),
                       child: ListTile(
                         leading: Icon(
@@ -274,7 +354,7 @@ class _TareasPageState extends State<TareasPage>
                                 ? Colors.grey
                                 : Colors.deepOrange.shade400,
                           ),
-                          onPressed: () => _toggleCompletada(index),
+                          onPressed: () => _confirmarToggle(index),
                         ),
                       ),
                     ),
@@ -298,8 +378,8 @@ class _TareasPageState extends State<TareasPage>
   }
 }
 
-// ----------------------------------------------------------------------
-// 🎨 Sistema de partículas
+// Partículas :3
+
 class _Particle {
   late double x;
   late double y;

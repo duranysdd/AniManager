@@ -7,13 +7,15 @@ environment:
   sdk: ^3.9.0-138.0.dev
 
 dependencies:
+  firebase_core: 4.2.1
   firebase_auth: ^6.1.2
-  firebase_core: ^4.2.1
+  cloud_firestore: ^6.1.0
   flutter:
     sdk: flutter
   intl: ^0.18.0
   lottie: ^3.1.0
   shared_preferences: ^2.3.2
+  provider: ^6.0.5
 
 dev_dependencies:
   flutter_test:

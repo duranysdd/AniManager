@@ -5,6 +5,8 @@ import 'InicioS.dart';
 import 'TareasPage.dart';
 import 'Notificaciones.dart';
 import 'dart:math';
+import 'Configuracion/PerfilPage.dart';
+import 'Configuracion/AyudaPage.dart';
 
 class AniManagerInicio extends StatefulWidget {
   const AniManagerInicio({super.key});
@@ -265,56 +267,135 @@ class _SettingsPage extends StatelessWidget {
     required this.onToggleDarkMode,
   });
 
-  Future<void> _logout(BuildContext context) async {
-    await FirebaseAuth.instance.signOut();
-
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-      (route) => false,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor:
-          darkMode ? const Color(0xFF121212) : const Color(0xFFFFF4E6),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 60),
-            Text(
-              "Configuración",
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: darkMode ? Colors.white : const Color(0xFF5A3E1B),
-              ),
-            ),
-            const SizedBox(height: 30),
-            SwitchListTile(
-              title: const Text("Modo oscuro"),
-              value: darkMode,
-              onChanged: onToggleDarkMode,
-              activeColor: Colors.deepOrange,
-            ),
-            const Divider(),
+    final textColor = darkMode ? Colors.white : const Color(0xFF5A3E1B);
+    final bgColor = darkMode ? const Color(0xFF121212) : const Color(0xFFFFF4E6);
 
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.deepOrange),
-              title: Text(
-                "Cerrar sesión",
-                style: TextStyle(
-                  color: darkMode ? Colors.white70 : Colors.black,
-                ),
-              ),
-              onTap: () => _logout(context),
+    return Scaffold(
+      backgroundColor: bgColor,
+      body: ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          const SizedBox(height: 40),
+
+          Text(
+            "Configuración",
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: textColor,
             ),
-          ],
-        ),
+          ),
+
+          const SizedBox(height: 30),
+
+          // ---------- PERFIL ----------
+          ListTile(
+            leading: CircleAvatar(
+              radius: 22,
+              backgroundColor: Colors.orange.shade300,
+              child: const Icon(Icons.person, color: Colors.white),
+            ),
+            title: Text(
+              "Mi perfil",
+              style: TextStyle(fontSize: 16, color: textColor),
+            ),
+            subtitle: Text(
+              "Ver o editar información",
+              style: TextStyle(
+                color: darkMode ? Colors.white54 : Colors.black54,
+              ),
+            ),
+            trailing: Icon(
+              Icons.arrow_forward_ios,
+              size: 18,
+              color: darkMode ? Colors.white54 : Colors.black54,
+            ),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PerfilPage(darkMode: darkMode),
+                ),
+              );
+            },
+          ),
+
+          Divider(color: darkMode ? Colors.white24 : Colors.grey.shade400),
+
+          // ------------------ MODO OSCURO ------------------
+          SwitchListTile(
+            title: Text("Modo oscuro", style: TextStyle(color: textColor)),
+            value: darkMode,
+            onChanged: onToggleDarkMode,
+            activeColor: Colors.deepOrange,
+          ),
+
+          Divider(color: darkMode ? Colors.white24 : Colors.grey.shade400),
+
+          // ------------------ AYUDA ------------------
+          ListTile(
+            leading: Icon(Icons.help_outline_rounded, color: Colors.deepOrange),
+            title: Text("Centro de ayuda",
+                style: TextStyle(fontSize: 16, color: textColor)),
+            subtitle: Text(
+              "Preguntas frecuentes y soporte",
+              style: TextStyle(
+                  color: darkMode ? Colors.white54 : Colors.black54),
+            ),
+            trailing: Icon(Icons.arrow_forward_ios,
+                size: 18, color: darkMode ? Colors.white54 : Colors.black54),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => AyudaPage(darkMode: darkMode)),
+              );
+            },
+          ),
+
+          Divider(color: darkMode ? Colors.white24 : Colors.grey.shade400),
+
+          // ------------------ SOBRE LA APP (NO CLICKEABLE) ------------------
+          ListTile(
+            leading: Icon(Icons.info_outline_rounded, color: Colors.deepOrange),
+            title: Text("Sobre la aplicación",
+                style: TextStyle(fontSize: 16, color: textColor)),
+            subtitle: Text(
+              "Versión 1.0.0 — Proyecto AniManager",
+              style: TextStyle(
+                color: darkMode ? Colors.white54 : Colors.black54,
+              ),
+            ),
+            trailing: null,
+            enabled: false,
+          ),
+
+          Divider(color: darkMode ? Colors.white24 : Colors.grey.shade400),
+
+          // ------------------ CERRAR SESIÓN ------------------
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.deepOrange),
+            title: Text("Cerrar sesión", style: TextStyle(color: textColor)),
+            onTap: () async {
+              try {
+                await FirebaseAuth.instance.signOut();
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text("Error al cerrar sesión: $e"),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+              }
+            },
+          ),
+        ],
       ),
     );
   }
