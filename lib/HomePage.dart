@@ -1,7 +1,6 @@
 import 'package:animanager/InicioS.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'InicioS.dart';
 import 'TareasPage.dart';
 import 'Notificaciones.dart';
 import 'dart:math';
@@ -157,7 +156,7 @@ class _HomeContent extends StatelessWidget {
                       color: Colors.orange.shade600,
                       icon: Icons.notifications_active_rounded,
                       title: "Notificaciones",
-                      subtitle: "Revisa alertas y recordatorios del ganado",
+                      subtitle: "Revisa tus tareas de hoy",
                       onTap: () => onTapCard("Notificaciones"),
                       darkMode: darkMode,
                     ),
@@ -166,7 +165,7 @@ class _HomeContent extends StatelessWidget {
                       color: Colors.deepOrange.shade400,
                       icon: Icons.task_alt_rounded,
                       title: "Tareas",
-                      subtitle: "Gestiona vacunaciones, alimentaciones y más",
+                      subtitle: "Muestra todas tus tareas asignadas",
                       onTap: () => onTapCard("Tareas"),
                       darkMode: darkMode,
                     ),
@@ -290,7 +289,6 @@ class _SettingsPage extends StatelessWidget {
 
           const SizedBox(height: 30),
 
-          // ---------- PERFIL ----------
           ListTile(
             leading: CircleAvatar(
               radius: 22,
@@ -324,7 +322,6 @@ class _SettingsPage extends StatelessWidget {
 
           Divider(color: darkMode ? Colors.white24 : Colors.grey.shade400),
 
-          // ------------------ MODO OSCURO ------------------
           SwitchListTile(
             title: Text("Modo oscuro", style: TextStyle(color: textColor)),
             value: darkMode,
@@ -334,7 +331,6 @@ class _SettingsPage extends StatelessWidget {
 
           Divider(color: darkMode ? Colors.white24 : Colors.grey.shade400),
 
-          // ------------------ AYUDA ------------------
           ListTile(
             leading: Icon(Icons.help_outline_rounded, color: Colors.deepOrange),
             title: Text("Centro de ayuda",
@@ -355,8 +351,6 @@ class _SettingsPage extends StatelessWidget {
           ),
 
           Divider(color: darkMode ? Colors.white24 : Colors.grey.shade400),
-
-          // ------------------ SOBRE LA APP (NO CLICKEABLE) ------------------
           ListTile(
             leading: Icon(Icons.info_outline_rounded, color: Colors.deepOrange),
             title: Text("Sobre la aplicación",
@@ -372,8 +366,6 @@ class _SettingsPage extends StatelessWidget {
           ),
 
           Divider(color: darkMode ? Colors.white24 : Colors.grey.shade400),
-
-          // ------------------ CERRAR SESIÓN ------------------
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.deepOrange),
             title: Text("Cerrar sesión", style: TextStyle(color: textColor)),

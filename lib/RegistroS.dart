@@ -1,7 +1,7 @@
-import 'package:animanager/InicioS.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'InicioS.dart';
 
 class RegistroScreen extends StatefulWidget {
   const RegistroScreen({super.key});
@@ -27,7 +27,6 @@ class _RegistroScreenState extends State<RegistroScreen> {
     }
 
     try {
-      // 🔐 Crear usuario en Firebase Auth
       UserCredential cred = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
         email: correoController.text.trim(),
@@ -35,31 +34,13 @@ class _RegistroScreenState extends State<RegistroScreen> {
       );
 
       String uid = cred.user!.uid;
-
-      // 📌 Guardar en la colección USERS (para tu app)
       await FirebaseFirestore.instance.collection("users").doc(uid).set({
         "uid": uid,
         "email": correoController.text.trim(),
         "createdAt": DateTime.now(),
-        "role": "pending", // 🔥 IMPORTANTE
+        "role": "pending", 
       });
 
-      // 📌 Guardar en la colección PENDING_USERS (lo que ve tu admin)
-      await FirebaseFirestore.instance.collection("pending_users").doc(uid).set({
-        "uid": uid,
-        "email": correoController.text.trim(),
-        "requestedAt": DateTime.now(),
-      });
-
-      // 🔔 Notificación para admin (si usas workers o functions)
-      await FirebaseFirestore.instance.collection("admin_notifications").add({
-        "uid": uid,
-        "email": correoController.text.trim(),
-        "timestamp": FieldValue.serverTimestamp(),
-        "type": "new_user_request",
-      });
-
-      // ✔ Volver al login
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -193,4 +174,4 @@ class _RegistroScreenState extends State<RegistroScreen> {
       ),
     );
   }
-}
+} 

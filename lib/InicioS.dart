@@ -1,7 +1,7 @@
-import 'package:animanager/HomePage.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'HomePage.dart';
 import 'RegistroS.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -27,13 +27,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
       String uid = cred.user!.uid;
 
-      // ⭐ ADAPTADO — LEER LA COLECCIÓN CORRECTA: "users"
+      // Leer el documento del usuario
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection("users")
           .doc(uid)
           .get();
 
-      // ❌ Si no existe (no debería pasar)
       if (!userDoc.exists) {
         await FirebaseAuth.instance.signOut();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -42,21 +41,21 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      // ⭐ ADAPTADO — OBTENER ROL
       final role = userDoc.get("role");
 
-      // ❌ SI NO LO HAN ACEPTADO
+      // No aceptado por el admin
       if (role == "pending") {
         await FirebaseAuth.instance.signOut();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("Tu cuenta aún no ha sido aceptada por el administrador"),
+            content:
+                Text("Tu cuenta aún no ha sido aceptada por el administrador"),
           ),
         );
         return;
       }
 
-      // ✔ SI ES WORKER O ADMIN, ENTRA NORMAL
+      // Si ya está aprobado
       if (role == "worker" || role == "admin") {
         Navigator.pushReplacement(
           context,
@@ -65,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      // ❌ Cualquier otro caso
+      // Rol inválido
       await FirebaseAuth.instance.signOut();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Rol no válido para iniciar sesión")),

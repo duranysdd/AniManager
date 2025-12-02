@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:math' show sin, cos, pi;
 
 class TareasPage extends StatefulWidget {
   final bool darkMode;
@@ -18,7 +19,6 @@ class _TareasPageState extends State<TareasPage>
   late List<_Particle> _particles;
 
   final TextEditingController _comentarioCtrl = TextEditingController();
-
   final String userId = FirebaseAuth.instance.currentUser!.uid;
 
   @override
@@ -35,8 +35,6 @@ class _TareasPageState extends State<TareasPage>
     _controller.dispose();
     super.dispose();
   }
-
-  // 🔥 CAMBIAR ESTADO (completada / pendiente)
   Future<void> _toggleTarea(DocumentSnapshot tareaDoc) async {
     final data = tareaDoc.data() as Map<String, dynamic>;
 
@@ -75,7 +73,7 @@ class _TareasPageState extends State<TareasPage>
     }
   }
 
-  // 🔥 MOSTRAR DETALLES
+  // MOSTRAR DETALLES
   void _mostrarDetalles(DocumentSnapshot tareaDoc) {
     final data = tareaDoc.data() as Map<String, dynamic>;
     final darkMode = widget.darkMode;
@@ -269,21 +267,21 @@ class _TareasPageState extends State<TareasPage>
             },
           ),
 
-          // 🔥 STREAM → SOLO TAREAS ASIGNADAS AL USUARIO
           StreamBuilder(
             stream: FirebaseFirestore.instance
                 .collection("tareas")
                 .where("assignedTo", isEqualTo: userId)
                 .orderBy("fecha", descending: true)
                 .snapshots(),
-
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
 
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return const Center(child: Text("No tienes tareas asignadas"));
+                return const Center(
+                  child: Text("No tienes tareas asignadas"),
+                );
               }
 
               final docs = snapshot.data!.docs;
@@ -293,7 +291,7 @@ class _TareasPageState extends State<TareasPage>
                 itemCount: docs.length,
                 itemBuilder: (context, index) {
                   final tareaDoc = docs[index];
-                  final data = tareaDoc.data() as Map<String, dynamic>;
+                  final data = tareaDoc.data();
 
                   final completada = data["completada"] ?? false;
 
@@ -380,8 +378,6 @@ class _TareasPageState extends State<TareasPage>
     );
   }
 }
-
-/// ------ Sistema de partículas ------
 class _Particle {
   late double x;
   late double y;
