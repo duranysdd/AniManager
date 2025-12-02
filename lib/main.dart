@@ -3,8 +3,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:provider/provider.dart';
 
-import './InicioS.dart';       
-import 'providers/AppProvider.dart'; 
+// Pantallas existentes
+import './InicioS.dart'; // LoginScreen
+import 'providers/AppProvider.dart';
+
+// NUEVE = Import de RegistroScreen si no estaba importado
+import 'RegistroS.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,7 +59,14 @@ class MyApp extends StatelessWidget {
           // 🌐 Idioma dinámico
           locale: Locale(provider.language),
 
+          // Pantalla inicial
           home: const LoginScreen(),
+
+          // 🚀 Rutas opcionales (para navegar más limpio)
+          routes: {
+            '/login': (context) => const LoginScreen(),
+            '/register': (context) => const RegistroScreen(),
+          },
         );
       },
     );

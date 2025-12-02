@@ -1,4 +1,3 @@
-import 'package:animanager/HomePage.dart';
 import 'package:animanager/InicioS.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -22,40 +21,57 @@ class _RegistroScreenState extends State<RegistroScreen> {
   Future<void> registrar() async {
     if (passController.text != pass2Controller.text) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Las contrasenias no coinciden")),
+        const SnackBar(content: Text("Las contraseñas no coinciden")),
       );
       return;
     }
 
     try {
-      // Crear usuario en Firebase Auth
+      // 🔐 Crear usuario en Firebase Auth
       UserCredential cred = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
         email: correoController.text.trim(),
         password: passController.text.trim(),
       );
 
-      // UID del usuario
       String uid = cred.user!.uid;
 
-      // Guardar datos en Firestore 
+      // 📌 Guardar en la colección USERS (para tu app)
       await FirebaseFirestore.instance.collection("users").doc(uid).set({
         "uid": uid,
         "email": correoController.text.trim(),
         "createdAt": DateTime.now(),
+        "role": "pending", // 🔥 IMPORTANTE
       });
 
+      // 📌 Guardar en la colección PENDING_USERS (lo que ve tu admin)
+      await FirebaseFirestore.instance.collection("pending_users").doc(uid).set({
+        "uid": uid,
+        "email": correoController.text.trim(),
+        "requestedAt": DateTime.now(),
+      });
+
+      // 🔔 Notificación para admin (si usas workers o functions)
+      await FirebaseFirestore.instance.collection("admin_notifications").add({
+        "uid": uid,
+        "email": correoController.text.trim(),
+        "timestamp": FieldValue.serverTimestamp(),
+        "type": "new_user_request",
+      });
+
+      // ✔ Volver al login
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const LoginScreen()),
       );
+
     } on FirebaseAuthException catch (e) {
       String mensaje = "Error desconocido";
 
-      if (e.code == "weak-password") mensaje = "La contrasenia es muy debil";
+      if (e.code == "weak-password") mensaje = "La contraseña es muy débil";
       if (e.code == "email-already-in-use")
-        mensaje = "Este correo ya esta registrado";
-      if (e.code == "invalid-email") mensaje = "Correo invalido";
+        mensaje = "Este correo ya está registrado";
+      if (e.code == "invalid-email") mensaje = "Correo inválido";
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(mensaje)),
@@ -111,7 +127,7 @@ class _RegistroScreenState extends State<RegistroScreen> {
                     controller: passController,
                     obscureText: _obscure1,
                     decoration: decoration.copyWith(
-                      hintText: "Contrasenia",
+                      hintText: "Contraseña",
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         icon: Icon(
@@ -129,7 +145,7 @@ class _RegistroScreenState extends State<RegistroScreen> {
                     controller: pass2Controller,
                     obscureText: _obscure2,
                     decoration: decoration.copyWith(
-                      hintText: "Repetir contrasenia",
+                      hintText: "Repetir contraseña",
                       prefixIcon: const Icon(Icons.lock_reset),
                       suffixIcon: IconButton(
                         icon: Icon(

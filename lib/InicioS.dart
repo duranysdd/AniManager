@@ -27,34 +27,56 @@ class _LoginScreenState extends State<LoginScreen> {
 
       String uid = cred.user!.uid;
 
-      DocumentSnapshot workerDoc = await FirebaseFirestore.instance
-          .collection("workers")
+      // ⭐ ADAPTADO — LEER LA COLECCIÓN CORRECTA: "users"
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection("users")
           .doc(uid)
           .get();
 
-      if (!workerDoc.exists) {
+      // ❌ Si no existe (no debería pasar)
+      if (!userDoc.exists) {
         await FirebaseAuth.instance.signOut();
-
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                "Tu cuenta aun no ha sido aceptada por el administrador"),
-          ),
+          const SnackBar(content: Text("Tu usuario no existe en la base de datos")),
         );
-
         return;
       }
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const AniManagerInicio()),
+      // ⭐ ADAPTADO — OBTENER ROL
+      final role = userDoc.get("role");
+
+      // ❌ SI NO LO HAN ACEPTADO
+      if (role == "pending") {
+        await FirebaseAuth.instance.signOut();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Tu cuenta aún no ha sido aceptada por el administrador"),
+          ),
+        );
+        return;
+      }
+
+      // ✔ SI ES WORKER O ADMIN, ENTRA NORMAL
+      if (role == "worker" || role == "admin") {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const AniManagerInicio()),
+        );
+        return;
+      }
+
+      // ❌ Cualquier otro caso
+      await FirebaseAuth.instance.signOut();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Rol no válido para iniciar sesión")),
       );
+
     } on FirebaseAuthException catch (e) {
       String mensaje = "Error desconocido";
 
       if (e.code == 'user-not-found') mensaje = "Usuario no encontrado";
-      if (e.code == 'wrong-password') mensaje = "Contrasenia incorrecta";
-      if (e.code == 'invalid-email') mensaje = "Correo invalido";
+      if (e.code == 'wrong-password') mensaje = "Contraseña incorrecta";
+      if (e.code == 'invalid-email') mensaje = "Correo inválido";
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(mensaje)),
@@ -117,7 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         controller: passController,
                         obscureText: _obscureText,
                         decoration: InputDecoration(
-                          hintText: "Contrasenia",
+                          hintText: "Contraseña",
                           prefixIcon:
                               const Icon(Icons.lock_outline, color: Colors.black54),
                           contentPadding: const EdgeInsets.symmetric(
@@ -158,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 15),
                           ),
                           child: const Text(
-                            "Iniciar Sesion",
+                            "Iniciar Sesión",
                             style: TextStyle(
                               fontSize: 18,
                               color: Colors.white,
@@ -177,7 +199,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           );
                         },
                         child: const Text(
-                          "Registrate",
+                          "Regístrate",
                           style: TextStyle(
                             color: Colors.blueAccent,
                             fontWeight: FontWeight.bold,
