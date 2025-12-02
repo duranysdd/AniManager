@@ -24,7 +24,6 @@ class _NotificacionesScreenState extends State<NotificacionesScreen>
       duration: const Duration(milliseconds: 600),
     )..forward();
 
-    // UID del usuario autenticado
     uid = FirebaseAuth.instance.currentUser?.uid;
   }
 

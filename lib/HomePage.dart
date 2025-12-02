@@ -311,6 +311,7 @@ class _SettingsPage extends StatelessWidget {
               color: darkMode ? Colors.white54 : Colors.black54,
             ),
             onTap: () {
+              // Navegación a la página de perfil corregida
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -372,6 +373,7 @@ class _SettingsPage extends StatelessWidget {
             onTap: () async {
               try {
                 await FirebaseAuth.instance.signOut();
+                // Asume que LoginScreen está definida en InicioS.dart
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (_) => const LoginScreen()),
