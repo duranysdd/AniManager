@@ -71,16 +71,17 @@ class _TareasPageState extends State<TareasPage>
     if (confirm == true) {
       await tareaDoc.reference.update({
         "completada": !data["completada"],
+        "estado": !data["completada"] ? "pendiente" : "realizada",
       });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(data["completada"]
-                ? "Tarea marcada como pendiente."
-                : "Tarea completada! 🎉"),
+            content: Text(!data["completada"]
+                ? "Tarea completada! 🎉"
+                : "Tarea marcada como pendiente."),
             backgroundColor:
-                data["completada"] ? Colors.grey : Colors.green,
+                !data["completada"] ? Colors.green : Colors.grey,
             duration: const Duration(milliseconds: 1500),
           ),
         );
@@ -92,7 +93,8 @@ class _TareasPageState extends State<TareasPage>
     final data = tareaDoc.data() as Map<String, dynamic>;
     final darkMode = widget.darkMode;
 
-    _comentarioCtrl.text = data["comentario"] ?? "";
+    // Usar 'reporte' si ese es el campo correcto de la web, si no usa 'comentario'
+    _comentarioCtrl.text = data["reporte"] ?? data["comentario"] ?? ""; 
 
     showModalBottomSheet(
       context: context,
@@ -232,46 +234,64 @@ class _TareasPageState extends State<TareasPage>
 
                     ElevatedButton.icon(
                       onPressed: () async {
-                      Navigator.pop(context);
+                        // 1. Variables de estado
+                        final bool nuevaCompletada = !(data["completada"] ?? false);
+                        final String nuevoEstado = nuevaCompletada ? "realizada" : "pendiente";
+                        final String comentario = _comentarioCtrl.text.trim();
+                        final String trabajadorEmail = currentUser!.email ?? "Sin Email";
 
-                      final bool nuevaCompletada = !(data["completada"] ?? false);
+                        try {
+                            // 2. ACTUALIZAR ESTADO Y REPORTE
+                            await tareaDoc.reference.update({
+                                "reporte": comentario, 
+                                "completada": nuevaCompletada,
+                                "estado": nuevoEstado,
+                            });
 
-                      final String comentario = _comentarioCtrl.text.trim();
+                            // 3. NOTIFICAR AL ADMINISTRADOR/SISTEMA (Ruta corregida en la iteración anterior)
+                            await FirebaseFirestore.instance
+                                .collection("admin_notificaciones") 
+                                .add({
+                                    "tipo": "reporte_tarea",
+                                    "trabajador": trabajadorEmail,
+                                    "mensaje": nuevaCompletada 
+                                        ? "El trabajador $trabajadorEmail completó la tarea: ${data["titulo"] ?? "Sin título"}"
+                                        : "El trabajador $trabajadorEmail desmarcó la tarea como pendiente: ${data["titulo"] ?? "Sin título"}",
+                                    "comentario": comentario,
+                                    "tareaId": tareaDoc.id,
+                                    "creadoEn": FieldValue.serverTimestamp(),
+                                    "leida": false,
+                                });
 
-                      // 1️⃣ Guardar comentario con el nombre CORRECTO para la web
-                      await tareaDoc.reference.update({
-                        "reporte": comentario,
-                      });
-
-                      // 2️⃣ Guardar estado compatible con la web
-                      await tareaDoc.reference.update({
-                        "completada": nuevaCompletada,
-                        "estado": nuevaCompletada ? "realizada" : "pendiente",
-                      });
-
-                      // 3️⃣ Notificar a admin
-                      await FirebaseFirestore.instance
-                          .collection("workers")
-                          .doc(currentUser!.uid) 
-                          .collection("notificaciones")
-                          .add({
-                        "mensaje": "El trabajador completó la tarea: ${data["titulo"] ?? "Sin título"}",
-                        "comentario": comentario,
-                        "tareaId": tareaDoc.id,
-                        "creadoEn": FieldValue.serverTimestamp(),
-                        "leido": false,
-                      });
-
-                      // 4️⃣ Mensaje visual
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            nuevaCompletada ? "Tarea completada 🎉" : "Tarea marcada como pendiente",
-                          ),
-                          backgroundColor: nuevaCompletada ? Colors.green : Colors.orange,
-                        ),
-                      );
-                    },
+                            // 4. Mensaje visual de éxito
+                            if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content: Text(
+                                            nuevaCompletada ? "Tarea completada 🎉" : "Tarea marcada como pendiente",
+                                        ),
+                                        backgroundColor: nuevaCompletada ? Colors.green : Colors.orange,
+                                    ),
+                                );
+                            }
+                        } catch (e) {
+                            // 5. Manejo de errores
+                            print("Error al actualizar tarea o enviar notificación: $e");
+                            if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content: Text('Error al procesar la tarea. Intenta de nuevo. ($e)'),
+                                        backgroundColor: Colors.redAccent,
+                                    ),
+                                );
+                            }
+                        }
+                        
+                        // 6. CIERRA EL BOTTOM SHEET AQUÍ (Después de todo el await)
+                        if (mounted) {
+                            Navigator.pop(context);
+                        }
+                      },
 
                       icon: Icon(
                         data["completada"]
@@ -319,7 +339,6 @@ class _TareasPageState extends State<TareasPage>
       );
     }
 
-    final String currentUserId = currentUser!.uid;
     final String currentUserEmail =
         currentUser!.email ?? "Sin Email";
 

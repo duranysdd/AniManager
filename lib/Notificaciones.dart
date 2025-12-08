@@ -62,10 +62,18 @@ class _NotificacionesScreenState extends State<NotificacionesScreen>
   Future<void> marcarTodasComoLeidas() async {
     if (uid == null) return;
 
+    // Utilizamos el mismo filtro de fecha para marcar como leídas solo las de hoy
+    final now = DateTime.now();
+    final startOfToday = DateTime(now.year, now.month, now.day);
+    final endOfToday = DateTime(now.year, now.month, now.day, 23, 59, 59);
+
     final query = await FirebaseFirestore.instance
-        .collection("workers")
+        .collection("users") // Usar 'users' según tu estructura
         .doc(uid)
         .collection("notificaciones")
+        .where("fecha_limite", isGreaterThanOrEqualTo: startOfToday)
+        .where("fecha_limite", isLessThanOrEqualTo: endOfToday)
+        .where("tipo", isEqualTo: "tarea")
         .get();
 
     for (var doc in query.docs) {
@@ -74,9 +82,32 @@ class _NotificacionesScreenState extends State<NotificacionesScreen>
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text("Todas las notificaciones marcadas como leídas"),
+        content: Text("Todas las tareas de hoy marcadas como leídas"),
       ),
     );
+  }
+
+  // ===================================================
+  // NUEVO: Stream solo para tareas de HOY
+  // ===================================================
+  Stream<QuerySnapshot> _getTodayTasksStream() {
+    final now = DateTime.now();
+    // Inicio del día actual (00:00:00)
+    final startOfToday = DateTime(now.year, now.month, now.day);
+    // Fin del día actual (23:59:59)
+    final endOfToday = DateTime(now.year, now.month, now.day, 23, 59, 59);
+
+    return FirebaseFirestore.instance
+        .collection("users")
+        .doc(uid)
+        .collection("notificaciones")
+        // Filtro por fecha: fecha_limite debe estar entre el inicio y fin de hoy
+        .where("fecha_limite", isGreaterThanOrEqualTo: startOfToday)
+        .where("fecha_limite", isLessThanOrEqualTo: endOfToday)
+        // Opcional: Filtra solo las de tipo 'tarea'
+        .where("tipo", isEqualTo: "tarea")
+        .orderBy("fecha_limite", descending: false)
+        .snapshots();
   }
 
   @override
@@ -96,7 +127,7 @@ class _NotificacionesScreenState extends State<NotificacionesScreen>
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text(
-          "Notificaciones",
+          "Tareas de Hoy", // Título ajustado
           style: TextStyle(
             color: darkMode ? Colors.orangeAccent : Colors.white,
             fontWeight: FontWeight.bold,
@@ -126,13 +157,9 @@ class _NotificacionesScreenState extends State<NotificacionesScreen>
           ),
         ),
         child: SafeArea(
-          child: StreamBuilder(
-            stream: FirebaseFirestore.instance
-                .collection("workers")
-                .doc(uid)
-                .collection("notificaciones")
-                .orderBy("hora", descending: true)
-                .snapshots(),
+          // === Uso del nuevo Stream filtrado ===
+          child: StreamBuilder<QuerySnapshot>( 
+            stream: _getTodayTasksStream(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
@@ -142,8 +169,9 @@ class _NotificacionesScreenState extends State<NotificacionesScreen>
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                 return const Center(
                     child: Text(
-                  "No hay notificaciones aún",
-                  style: TextStyle(fontSize: 16, color: Colors.white),
+                  "¡Día libre! No tienes tareas asignadas para hoy.", // Mensaje más descriptivo
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 18, color: Colors.white),
                 ));
               }
 
@@ -159,10 +187,12 @@ class _NotificacionesScreenState extends State<NotificacionesScreen>
                       final notiDoc = docs[index];
                       final noti = notiDoc.data() as Map<String, dynamic>;
 
-                      final horaFormato = noti["hora"] is Timestamp
-                          ? DateFormat('hh:mm a')
-                              .format(noti["hora"].toDate())
-                          : "—";
+                      final fechaTimestamp = noti["fecha_limite"] is Timestamp
+                          ? noti["fecha_limite"].toDate()
+                          : DateTime.now(); // Usa fecha_limite o current time
+                      
+                      final horaFormato = DateFormat('hh:mm a')
+                          .format(fechaTimestamp);
 
                       final color = _getColor(noti['tipo']);
 
@@ -248,7 +278,7 @@ class _NotificacionesScreenState extends State<NotificacionesScreen>
                                     ),
                                     const SizedBox(height: 6),
                                     Text(
-                                      horaFormato,
+                                      "Límite: $horaFormato", // Indica la hora límite de la tarea
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: darkMode
@@ -269,7 +299,8 @@ class _NotificacionesScreenState extends State<NotificacionesScreen>
                                       : Colors.orangeAccent,
                                 ),
                                 onPressed: () {
-                                  notiDoc.reference.update({"leida": true});
+                                  // Alternar estado 'leida'
+                                  notiDoc.reference.update({"leida": !(noti['leida'] ?? false)});
                                 },
                               ),
                             ),

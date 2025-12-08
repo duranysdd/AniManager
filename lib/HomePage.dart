@@ -1,6 +1,7 @@
 import 'package:animanager/InicioS.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'TareasPage.dart';
 import 'Notificaciones.dart';
 import 'dart:math';
@@ -53,6 +54,7 @@ class _AniManagerInicioState extends State<AniManagerInicio>
       Navigator.push(
         context,
         MaterialPageRoute(
+          // Asegúrate de pasar el UID actual a NotificacionesScreen si es necesario
           builder: (context) => NotificacionesScreen(darkMode: _darkMode),
         ),
       );
@@ -152,14 +154,12 @@ class _HomeContent extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
                 child: Column(
                   children: [
-                    _AnimatedCard(
-                      color: Colors.orange.shade600,
-                      icon: Icons.notifications_active_rounded,
-                      title: "Notificaciones",
-                      subtitle: "Revisa tus tareas de hoy",
-                      onTap: () => onTapCard("Notificaciones"),
+                    // === REEMPLAZADO CON EL INDICADOR DE TAREAS DE HOY ===
+                    _TodayTasksIndicator(
                       darkMode: darkMode,
+                      onTap: () => onTapCard("Notificaciones"),
                     ),
+                    // =====================================================
                     const SizedBox(height: 25),
                     _AnimatedCard(
                       color: Colors.deepOrange.shade400,
@@ -180,11 +180,200 @@ class _HomeContent extends StatelessWidget {
   }
 }
 
+// ===================================================
+// NUEVO WIDGET: INDICADOR DE TAREAS DE HOY (VACA)
+// ===================================================
+
+class _TodayTasksIndicator extends StatelessWidget {
+  final bool darkMode;
+  final VoidCallback onTap;
+
+  const _TodayTasksIndicator({required this.darkMode, required this.onTap});
+
+  // Stream para obtener el conteo de tareas de hoy
+  Stream<int> _getTodayTasksCount() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return Stream.value(0);
+
+    // Definir el inicio y el final de hoy
+    final now = DateTime.now();
+    final startOfToday = DateTime(now.year, now.month, now.day);
+    final endOfToday = DateTime(now.year, now.month, now.day, 23, 59, 59);
+
+    return FirebaseFirestore.instance
+        .collection("users")
+        .doc(uid)
+        .collection("notificaciones")
+        // Filtra las tareas cuya fecha límite esté dentro de hoy
+        .where("fecha_limite", isGreaterThanOrEqualTo: startOfToday)
+        .where("fecha_limite", isLessThanOrEqualTo: endOfToday)
+        .where("tipo", isEqualTo: "tarea") // Asegura que solo cuente tareas
+        .snapshots()
+        .map((snapshot) {
+          // Contar solo las que no estén marcadas como completadas/leídas
+          // Si el campo 'leida' existe y es false, lo cuenta.
+          return snapshot.docs.where((doc) => (doc.data()['leida'] ?? false) == false).length;
+        });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<int>(
+      stream: _getTodayTasksCount(),
+      initialData: 0,
+      builder: (context, snapshot) {
+        final count = snapshot.data ?? 0;
+        
+        // Define el indicador de notificación (Vaca o punto)
+        final indicatorWidget = count > 0
+            ? Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.redAccent,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+                // Icono de vaca para sustituir al punto rojo (Icons.filter_vintage para cara de vaca)
+                child: const Icon(Icons.filter_vintage_outlined, color: Colors.white, size: 14), 
+              )
+            : null;
+
+        return _AnimatedCard(
+          color: Colors.orange.shade600,
+          icon: Icons.notifications_active_rounded,
+          title: "Notificaciones",
+          subtitle: count > 0 
+              ? "Tienes $count tarea(s) pendiente(s) para hoy" 
+              : "Revisa tus tareas de hoy",
+          onTap: onTap,
+          darkMode: darkMode,
+          indicator: indicatorWidget, // Pasa el icono de vaca/punto
+        );
+      },
+    );
+  }
+}
+
+// ===================================================
+// MODIFICACIÓN EN _AnimatedCard para aceptar el indicador
+// ===================================================
+
+class _AnimatedCard extends StatefulWidget {
+  final Color color;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  final bool darkMode;
+  final Widget? indicator; // Campo para el indicador de notificación
+
+  const _AnimatedCard({
+    required this.color,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    required this.darkMode,
+    this.indicator, // Hazlo opcional
+  });
+
+  @override
+  State<_AnimatedCard> createState() => _AnimatedCardState();
+}
+
+class _AnimatedCardState extends State<_AnimatedCard> {
+  double _scale = 1.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final bgColor = widget.darkMode ? Colors.grey.shade900 : Colors.white;
+    final textColor = widget.darkMode
+        ? Colors.white.withOpacity(0.9)
+        : const Color(0xFF5A3E1B);
+
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _scale = 0.97),
+      onTapUp: (_) {
+        setState(() => _scale = 1.0);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _scale = 1.0),
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 150),
+        scale: _scale,
+        child: Container(
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(18),
+            border: Border(
+              left: BorderSide(color: widget.color, width: 8),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              // === Contenedor del ícono principal con el indicador de notificación ===
+              Stack(
+                clipBehavior: Clip.none, // Permite que el indicador salga del borde
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: widget.color.withOpacity(0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    child: Icon(widget.icon, size: 36, color: widget.color),
+                  ),
+                  if (widget.indicator != null)
+                    Positioned(
+                      top: -4,
+                      right: -4,
+                      child: widget.indicator!,
+                    ),
+                ],
+              ),
+              // ====================================================================
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(widget.title,
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: textColor)),
+                    const SizedBox(height: 4),
+                    Text(widget.subtitle,
+                        style: TextStyle(
+                            fontSize: 14,
+                            color: widget.darkMode
+                                ? Colors.grey.shade400
+                                : Colors.grey)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// --- Resto de clases como _HeaderSection, _SettingsPage, _Particle, _ParticlePainter se mantienen igual ---
+
 class _HeaderSection extends StatelessWidget {
   final bool darkMode;
-
+  // ... (código original de _HeaderSection) ...
   const _HeaderSection({required this.darkMode});
-
   @override
   Widget build(BuildContext context) {
     final textGradient = darkMode
@@ -198,7 +387,6 @@ class _HeaderSection extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           );
-
     return Container(
       height: 230,
       width: double.infinity,
@@ -260,24 +448,21 @@ class _HeaderSection extends StatelessWidget {
 class _SettingsPage extends StatelessWidget {
   final bool darkMode;
   final Function(bool) onToggleDarkMode;
-
+  // ... (código original de _SettingsPage) ...
   const _SettingsPage({
     required this.darkMode,
     required this.onToggleDarkMode,
   });
-
   @override
   Widget build(BuildContext context) {
     final textColor = darkMode ? Colors.white : const Color(0xFF5A3E1B);
     final bgColor = darkMode ? const Color(0xFF121212) : const Color(0xFFFFF4E6);
-
     return Scaffold(
       backgroundColor: bgColor,
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
           const SizedBox(height: 40),
-
           Text(
             "Configuración",
             style: TextStyle(
@@ -286,9 +471,7 @@ class _SettingsPage extends StatelessWidget {
               color: textColor,
             ),
           ),
-
           const SizedBox(height: 30),
-
           ListTile(
             leading: CircleAvatar(
               radius: 22,
@@ -320,18 +503,14 @@ class _SettingsPage extends StatelessWidget {
               );
             },
           ),
-
           Divider(color: darkMode ? Colors.white24 : Colors.grey.shade400),
-
           SwitchListTile(
             title: Text("Modo oscuro", style: TextStyle(color: textColor)),
             value: darkMode,
             onChanged: onToggleDarkMode,
             activeColor: Colors.deepOrange,
           ),
-
           Divider(color: darkMode ? Colors.white24 : Colors.grey.shade400),
-
           ListTile(
             leading: Icon(Icons.help_outline_rounded, color: Colors.deepOrange),
             title: Text("Centro de ayuda",
@@ -350,7 +529,6 @@ class _SettingsPage extends StatelessWidget {
               );
             },
           ),
-
           Divider(color: darkMode ? Colors.white24 : Colors.grey.shade400),
           ListTile(
             leading: Icon(Icons.info_outline_rounded, color: Colors.deepOrange),
@@ -365,7 +543,6 @@ class _SettingsPage extends StatelessWidget {
             trailing: null,
             enabled: false,
           ),
-
           Divider(color: darkMode ? Colors.white24 : Colors.grey.shade400),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.deepOrange),
@@ -395,107 +572,12 @@ class _SettingsPage extends StatelessWidget {
   }
 }
 
-class _AnimatedCard extends StatefulWidget {
-  final Color color;
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-  final bool darkMode;
-
-  const _AnimatedCard({
-    required this.color,
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-    required this.darkMode,
-  });
-
-  @override
-  State<_AnimatedCard> createState() => _AnimatedCardState();
-}
-
-class _AnimatedCardState extends State<_AnimatedCard> {
-  double _scale = 1.0;
-
-  @override
-  Widget build(BuildContext context) {
-    final bgColor = widget.darkMode ? Colors.grey.shade900 : Colors.white;
-    final textColor = widget.darkMode
-        ? Colors.white.withOpacity(0.9)
-        : const Color(0xFF5A3E1B);
-
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _scale = 0.97),
-      onTapUp: (_) {
-        setState(() => _scale = 1.0);
-        widget.onTap();
-      },
-      onTapCancel: () => setState(() => _scale = 1.0),
-      child: AnimatedScale(
-        duration: const Duration(milliseconds: 150),
-        scale: _scale,
-        child: Container(
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(18),
-            border: Border(
-              left: BorderSide(color: widget.color, width: 8),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 6,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: widget.color.withOpacity(0.15),
-                  shape: BoxShape.circle,
-                ),
-                padding: const EdgeInsets.all(12),
-                child: Icon(widget.icon, size: 36, color: widget.color),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(widget.title,
-                        style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                            color: textColor)),
-                    const SizedBox(height: 4),
-                    Text(widget.subtitle,
-                        style: TextStyle(
-                            fontSize: 14,
-                            color: widget.darkMode
-                                ? Colors.grey.shade400
-                                : Colors.grey)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _Particle {
   late double x;
   late double y;
   late double radius;
   late double speed;
-
+  // ... (código original de _Particle) ...
   _Particle() {
     final random = Random();
     x = random.nextDouble();
@@ -509,9 +591,8 @@ class _ParticlePainter extends CustomPainter {
   final List<_Particle> particles;
   final double progress;
   final Color color;
-
+  // ... (código original de _ParticlePainter) ...
   _ParticlePainter(this.particles, this.progress, this.color);
-
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..color = color.withOpacity(0.15);
@@ -525,7 +606,6 @@ class _ParticlePainter extends CustomPainter {
       canvas.drawCircle(Offset(dx, dy), p.radius, paint);
     }
   }
-
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
