@@ -36,6 +36,7 @@ class _TareasPageState extends State<TareasPage>
     _comentarioCtrl.dispose();
     super.dispose();
   }
+
   Future<void> _toggleTarea(DocumentSnapshot tareaDoc) async {
     final data = tareaDoc.data() as Map<String, dynamic>;
 
@@ -71,12 +72,15 @@ class _TareasPageState extends State<TareasPage>
       await tareaDoc.reference.update({
         "completada": !data["completada"],
       });
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(data["completada"] ? "Tarea marcada como pendiente." : "Tarea completada! 🎉"),
-            backgroundColor: data["completada"] ? Colors.grey : Colors.green,
+            content: Text(data["completada"]
+                ? "Tarea marcada como pendiente."
+                : "Tarea completada! 🎉"),
+            backgroundColor:
+                data["completada"] ? Colors.grey : Colors.green,
             duration: const Duration(milliseconds: 1500),
           ),
         );
@@ -103,7 +107,7 @@ class _TareasPageState extends State<TareasPage>
             left: 24,
             right: 24,
             top: 24,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20, 
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
           ),
           child: SingleChildScrollView(
             child: Column(
@@ -123,7 +127,9 @@ class _TareasPageState extends State<TareasPage>
                 ),
 
                 Text(
-                  data["titulo"] ?? data["descripcion"] ?? "Tarea sin título", 
+                  data["titulo"] ??
+                      data["descripcion"] ??
+                      "Tarea sin título",
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -183,21 +189,23 @@ class _TareasPageState extends State<TareasPage>
                 TextField(
                   controller: _comentarioCtrl,
                   maxLines: 3,
-                  style: TextStyle(color: darkMode ? Colors.white : Colors.black),
+                  style: TextStyle(
+                      color: darkMode ? Colors.white : Colors.black),
                   decoration: InputDecoration(
                     hintText: "Añadir un comentario...",
-                    hintStyle: TextStyle(color: darkMode ? Colors.grey.shade500 : Colors.grey.shade600),
+                    hintStyle: TextStyle(
+                        color: darkMode
+                            ? Colors.grey.shade500
+                            : Colors.grey.shade600),
                     filled: true,
-                    fillColor:
-                        darkMode ? Colors.grey.shade800 : Colors.grey.shade200,
+                    fillColor: darkMode
+                        ? Colors.grey.shade800
+                        : Colors.grey.shade200,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
                   ),
-                  onChanged: (value) {
-                    tareaDoc.reference.update({"comentario": value});
-                  },
                 ),
 
                 const SizedBox(height: 25),
@@ -206,7 +214,9 @@ class _TareasPageState extends State<TareasPage>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      data["completada"] ? "✅ Completada" : "🕓 Pendiente",
+                      data["completada"]
+                          ? "✅ Completada"
+                          : "🕓 Pendiente",
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -216,11 +226,53 @@ class _TareasPageState extends State<TareasPage>
                       ),
                     ),
 
+                    // ----------------------------------------------------------------
+                    // 🔥 BOTÓN FINAL — COMPLETO: Guarda comentario + estado + notifica
+                    // ----------------------------------------------------------------
+
                     ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pop(context); 
-                        _toggleTarea(tareaDoc); 
-                      },
+                      onPressed: () async {
+                      Navigator.pop(context);
+
+                      final bool nuevaCompletada = !(data["completada"] ?? false);
+
+                      final String comentario = _comentarioCtrl.text.trim();
+
+                      // 1️⃣ Guardar comentario con el nombre CORRECTO para la web
+                      await tareaDoc.reference.update({
+                        "reporte": comentario,
+                      });
+
+                      // 2️⃣ Guardar estado compatible con la web
+                      await tareaDoc.reference.update({
+                        "completada": nuevaCompletada,
+                        "estado": nuevaCompletada ? "realizada" : "pendiente",
+                      });
+
+                      // 3️⃣ Notificar a admin
+                      await FirebaseFirestore.instance
+                          .collection("workers")
+                          .doc(currentUser!.uid) 
+                          .collection("notificaciones")
+                          .add({
+                        "mensaje": "El trabajador completó la tarea: ${data["titulo"] ?? "Sin título"}",
+                        "comentario": comentario,
+                        "tareaId": tareaDoc.id,
+                        "creadoEn": FieldValue.serverTimestamp(),
+                        "leido": false,
+                      });
+
+                      // 4️⃣ Mensaje visual
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            nuevaCompletada ? "Tarea completada 🎉" : "Tarea marcada como pendiente",
+                          ),
+                          backgroundColor: nuevaCompletada ? Colors.green : Colors.orange,
+                        ),
+                      );
+                    },
+
                       icon: Icon(
                         data["completada"]
                             ? Icons.undo_rounded
@@ -256,31 +308,32 @@ class _TareasPageState extends State<TareasPage>
     final darkMode = widget.darkMode;
     final bgColor =
         darkMode ? const Color(0xFF121212) : const Color(0xFFFFF4E6);
-    final textColor = darkMode ? Colors.white : const Color(0xFF5A3E1B);
+    final textColor =
+        darkMode ? Colors.white : const Color(0xFF5A3E1B);
 
     if (currentUser == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text("Tareas"), backgroundColor: Colors.red),
+        appBar:
+            AppBar(title: const Text("Tareas"), backgroundColor: Colors.red),
         body: const Center(child: Text("Error: Usuario no autenticado")),
       );
     }
-    
-    final String currentUserId = currentUser!.uid; 
-    final String currentUserEmail = currentUser!.email ?? "Sin Email"; 
+
+    final String currentUserId = currentUser!.uid;
+    final String currentUserEmail =
+        currentUser!.email ?? "Sin Email";
 
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
         title: Text("Mis Tareas", style: TextStyle(color: textColor)),
-        backgroundColor: bgColor, 
+        backgroundColor: bgColor,
         foregroundColor: textColor,
         elevation: 0,
         centerTitle: true,
       ),
       body: Stack(
         children: [
-
-          // Animación de partículas
           AnimatedBuilder(
             animation: _controller,
             builder: (_, __) {
@@ -297,21 +350,28 @@ class _TareasPageState extends State<TareasPage>
             },
           ),
           Padding(
-            padding: const EdgeInsets.only(top: 40.0), 
-            child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+            padding: const EdgeInsets.only(top: 40.0),
+            child: StreamBuilder<
+                QuerySnapshot<Map<String, dynamic>>>(
               stream: FirebaseFirestore.instance
                   .collection("tareas")
-                  .where("paraNombre", isEqualTo: currentUserEmail) 
+                  .where("paraNombre",
+                      isEqualTo: currentUserEmail)
                   .orderBy("fecha", descending: true)
                   .snapshots(),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: Colors.deepOrange));
+                if (snapshot.connectionState ==
+                    ConnectionState.waiting) {
+                  return const Center(
+                      child: CircularProgressIndicator(
+                          color: Colors.deepOrange));
                 }
 
                 if (snapshot.hasError) {
                   return Center(
-                    child: Text("Error: ${snapshot.error}", style: TextStyle(color: Colors.red)),
+                    child: Text(
+                        "Error: ${snapshot.error}",
+                        style: TextStyle(color: Colors.red)),
                   );
                 }
 
@@ -321,7 +381,9 @@ class _TareasPageState extends State<TareasPage>
                   return Center(
                     child: Text(
                       "No se encontraron tareas para: $currentUserEmail",
-                      style: TextStyle(color: textColor.withOpacity(0.7), fontSize: 16),
+                      style: TextStyle(
+                          color: textColor.withOpacity(0.7),
+                          fontSize: 16),
                       textAlign: TextAlign.center,
                     ),
                   );
@@ -333,24 +395,34 @@ class _TareasPageState extends State<TareasPage>
                     final tareaDoc = docs[index];
                     final data = tareaDoc.data();
 
-                    final completada = data["completada"] ?? false;
-                    final itemTitle = data["titulo"] ?? data["descripcion"] ?? "Tarea sin título"; 
+                    final completada =
+                        data["completada"] ?? false;
+                    final itemTitle =
+                        data["titulo"] ??
+                            data["descripcion"] ??
+                            "Tarea sin título";
 
                     return GestureDetector(
                       onTap: () => _mostrarDetalles(tareaDoc),
                       child: AnimatedScale(
-                        duration: const Duration(milliseconds: 150),
+                        duration:
+                            const Duration(milliseconds: 150),
                         scale: completada ? 0.97 : 1.0,
                         child: Container(
-                          margin: const EdgeInsets.only(bottom: 16),
+                          margin:
+                              const EdgeInsets.only(bottom: 16),
                           decoration: BoxDecoration(
                             color: darkMode
                                 ? Colors.grey.shade900
                                 : Colors.white,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius:
+                                BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(darkMode ? 0.3 : 0.1),
+                                color: Colors.black
+                                    .withOpacity(darkMode
+                                        ? 0.3
+                                        : 0.1),
                                 blurRadius: 5,
                                 offset: const Offset(0, 3),
                               ),
@@ -359,7 +431,8 @@ class _TareasPageState extends State<TareasPage>
                               left: BorderSide(
                                 color: completada
                                     ? Colors.green
-                                    : Colors.deepOrange.shade400,
+                                    : Colors
+                                        .deepOrange.shade400,
                                 width: 6,
                               ),
                             ),
@@ -367,8 +440,10 @@ class _TareasPageState extends State<TareasPage>
                           child: ListTile(
                             leading: Icon(
                               completada
-                                  ? Icons.check_circle_rounded
-                                  : Icons.radio_button_unchecked,
+                                  ? Icons
+                                      .check_circle_rounded
+                                  : Icons
+                                      .radio_button_unchecked,
                               color: completada
                                   ? Colors.green
                                   : Colors.deepOrange.shade400,
@@ -380,7 +455,8 @@ class _TareasPageState extends State<TareasPage>
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
                                 decoration: completada
-                                    ? TextDecoration.lineThrough
+                                    ? TextDecoration
+                                        .lineThrough
                                     : TextDecoration.none,
                               ),
                             ),
@@ -397,11 +473,13 @@ class _TareasPageState extends State<TareasPage>
                                 completada
                                     ? Icons.undo_rounded
                                     : Icons.check_rounded,
-                              color: completada
+                                color: completada
                                     ? Colors.grey
-                                    : Colors.deepOrange.shade400,
+                                    : Colors
+                                        .deepOrange.shade400,
                               ),
-                              onPressed: () => _toggleTarea(tareaDoc),
+                              onPressed: () =>
+                                  _toggleTarea(tareaDoc),
                             ),
                           ),
                         ),
@@ -414,7 +492,6 @@ class _TareasPageState extends State<TareasPage>
           ),
         ],
       ),
-
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.deepOrange,
         foregroundColor: Colors.white,
@@ -422,7 +499,8 @@ class _TareasPageState extends State<TareasPage>
         onPressed: () {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text("Función de agregar tarea próximamente"),
+              content: Text(
+                  "Función de agregar tarea próximamente"),
               backgroundColor: Colors.deepOrange,
             ),
           );
@@ -432,7 +510,7 @@ class _TareasPageState extends State<TareasPage>
   }
 }
 
-
+/// PARTICULAS
 class _Particle {
   late double x;
   late double y;
@@ -453,11 +531,13 @@ class _ParticlePainter extends CustomPainter {
   final double progress;
   final Color color;
 
-  _ParticlePainter(this.particles, this.progress, this.color);
+  _ParticlePainter(
+      this.particles, this.progress, this.color);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = color.withOpacity(0.15);
+    final paint =
+        Paint()..color = color.withOpacity(0.15);
     for (final p in particles) {
       final dx = (p.x * size.width +
               sin(progress * 2 * pi + p.x * 2 * pi) * 10) %
@@ -465,10 +545,13 @@ class _ParticlePainter extends CustomPainter {
       final dy = (p.y * size.height +
               cos(progress * 2 * pi + p.y * 2 * pi) * 10) %
           size.height;
-      canvas.drawCircle(Offset(dx, dy), p.radius, paint);
+      canvas.drawCircle(
+          Offset(dx, dy), p.radius, paint);
     }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(
+          covariant CustomPainter oldDelegate) =>
+      true;
 }
