@@ -17,10 +17,8 @@ class _TareasPageState extends State<TareasPage>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late List<_Particle> _particles;
-
   final TextEditingController _comentarioCtrl = TextEditingController();
   final User? currentUser = FirebaseAuth.instance.currentUser;
-
   @override
   void initState() {
     super.initState();
@@ -29,17 +27,14 @@ class _TareasPageState extends State<TareasPage>
           ..repeat();
     _particles = List.generate(20, (_) => _Particle());
   }
-
   @override
   void dispose() {
     _controller.dispose();
     _comentarioCtrl.dispose();
     super.dispose();
   }
-
   Future<void> _toggleTarea(DocumentSnapshot tareaDoc) async {
     final data = tareaDoc.data() as Map<String, dynamic>;
-
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) {
@@ -67,13 +62,11 @@ class _TareasPageState extends State<TareasPage>
         );
       },
     );
-
     if (confirm == true) {
       await tareaDoc.reference.update({
         "completada": !data["completada"],
         "estado": !data["completada"] ? "pendiente" : "realizada",
       });
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -88,14 +81,10 @@ class _TareasPageState extends State<TareasPage>
       }
     }
   }
-
   void _mostrarDetalles(DocumentSnapshot tareaDoc) {
     final data = tareaDoc.data() as Map<String, dynamic>;
     final darkMode = widget.darkMode;
-
-    // Usar 'reporte' si ese es el campo correcto de la web, si no usa 'comentario'
     _comentarioCtrl.text = data["reporte"] ?? data["comentario"] ?? ""; 
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -127,7 +116,6 @@ class _TareasPageState extends State<TareasPage>
                     ),
                   ),
                 ),
-
                 Text(
                   data["titulo"] ??
                       data["descripcion"] ??
@@ -140,9 +128,7 @@ class _TareasPageState extends State<TareasPage>
                         : Colors.deepOrange,
                   ),
                 ),
-
                 const SizedBox(height: 10),
-
                 Row(
                   children: [
                     Icon(
@@ -164,9 +150,7 @@ class _TareasPageState extends State<TareasPage>
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 20),
-
                 Text(
                   data["descripcion"] ?? "Sin descripción detallada.",
                   style: TextStyle(
@@ -175,9 +159,7 @@ class _TareasPageState extends State<TareasPage>
                     color: darkMode ? Colors.white70 : Colors.black87,
                   ),
                 ),
-
                 const SizedBox(height: 25),
-
                 Text(
                   "Comentarios:",
                   style: TextStyle(
@@ -187,14 +169,13 @@ class _TareasPageState extends State<TareasPage>
                   ),
                 ),
                 const SizedBox(height: 8),
-
                 TextField(
                   controller: _comentarioCtrl,
                   maxLines: 3,
                   style: TextStyle(
                       color: darkMode ? Colors.white : Colors.black),
                   decoration: InputDecoration(
-                    hintText: "Añadir un comentario...",
+                    hintText: "Añadir un comentario",
                     hintStyle: TextStyle(
                         color: darkMode
                             ? Colors.grey.shade500
@@ -209,9 +190,7 @@ class _TareasPageState extends State<TareasPage>
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 25),
-
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -227,11 +206,6 @@ class _TareasPageState extends State<TareasPage>
                             : Colors.deepOrange,
                       ),
                     ),
-
-                    // ----------------------------------------------------------------
-                    // 🔥 BOTÓN FINAL — COMPLETO: Guarda comentario + estado + notifica
-                    // ----------------------------------------------------------------
-
                     ElevatedButton.icon(
                       onPressed: () async {
                         // 1. Variables de estado
@@ -241,14 +215,11 @@ class _TareasPageState extends State<TareasPage>
                         final String trabajadorEmail = currentUser!.email ?? "Sin Email";
 
                         try {
-                            // 2. ACTUALIZAR ESTADO Y REPORTE
                             await tareaDoc.reference.update({
                                 "reporte": comentario, 
                                 "completada": nuevaCompletada,
                                 "estado": nuevoEstado,
                             });
-
-                            // 3. NOTIFICAR AL ADMINISTRADOR/SISTEMA (Ruta corregida en la iteración anterior)
                             await FirebaseFirestore.instance
                                 .collection("admin_notificaciones") 
                                 .add({
@@ -262,8 +233,6 @@ class _TareasPageState extends State<TareasPage>
                                     "creadoEn": FieldValue.serverTimestamp(),
                                     "leida": false,
                                 });
-
-                            // 4. Mensaje visual de éxito
                             if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
@@ -275,7 +244,6 @@ class _TareasPageState extends State<TareasPage>
                                 );
                             }
                         } catch (e) {
-                            // 5. Manejo de errores
                             print("Error al actualizar tarea o enviar notificación: $e");
                             if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -286,8 +254,6 @@ class _TareasPageState extends State<TareasPage>
                                 );
                             }
                         }
-                        
-                        // 6. CIERRA EL BOTTOM SHEET AQUÍ (Después de todo el await)
                         if (mounted) {
                             Navigator.pop(context);
                         }

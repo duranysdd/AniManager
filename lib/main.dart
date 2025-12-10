@@ -2,13 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:provider/provider.dart';
-
-// Pantallas existentes
-import './InicioS.dart'; // LoginScreen
+import './InicioS.dart'; 
 import 'providers/AppProvider.dart';
-
-// NUEVE = Import de RegistroScreen si no estaba importado
 import 'RegistroS.dart';
+import 'SplashScreen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,10 +33,8 @@ class MyApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           title: 'Mi App',
 
-          // 🌙 Tema dinámico
           themeMode: provider.darkMode ? ThemeMode.dark : ThemeMode.light,
 
-          // Tema claro
           theme: ThemeData(
             brightness: Brightness.light,
             primarySwatch: Colors.orange,
@@ -48,7 +43,6 @@ class MyApp extends StatelessWidget {
                 .apply(fontSizeFactor: provider.textScale),
           ),
 
-          // Tema oscuro
           darkTheme: ThemeData(
             brightness: Brightness.dark,
             textTheme: Theme.of(context)
@@ -56,13 +50,10 @@ class MyApp extends StatelessWidget {
                 .apply(fontSizeFactor: provider.textScale),
           ),
 
-          // 🌐 Idioma dinámico
           locale: Locale(provider.language),
 
-          // Pantalla inicial
-          home: const LoginScreen(),
+          home: const SplashScreen(),
 
-          // 🚀 Rutas opcionales (para navegar más limpio)
           routes: {
             '/login': (context) => const LoginScreen(),
             '/register': (context) => const RegistroScreen(),

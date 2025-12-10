@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'TareasPage.dart';
-import 'Notificaciones.dart';
+import 'Estadisticas.dart';
 import 'dart:math';
 import 'Configuracion/PerfilPage.dart';
 import 'Configuracion/AyudaPage.dart';
@@ -25,10 +25,8 @@ class _AniManagerInicioState extends State<AniManagerInicio>
   @override
   void initState() {
     super.initState();
-    _controller =
-        AnimationController(vsync: this, duration: const Duration(seconds: 18))
-          ..repeat();
-
+    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 18))
+      ..repeat();
     _particles = List.generate(25, (_) => _Particle());
   }
 
@@ -50,12 +48,11 @@ class _AniManagerInicioState extends State<AniManagerInicio>
           builder: (context) => TareasPage(darkMode: _darkMode),
         ),
       );
-    } else if (name == "Notificaciones") {
+    } else if (name == "Estadísticas") {
       Navigator.push(
         context,
         MaterialPageRoute(
-          // Asegúrate de pasar el UID actual a NotificacionesScreen si es necesario
-          builder: (context) => NotificacionesScreen(darkMode: _darkMode),
+          builder: (context) => Est(darkMode: _darkMode),
         ),
       );
     } else {
@@ -154,12 +151,10 @@ class _HomeContent extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
                 child: Column(
                   children: [
-                    // === REEMPLAZADO CON EL INDICADOR DE TAREAS DE HOY ===
                     _TodayTasksIndicator(
                       darkMode: darkMode,
-                      onTap: () => onTapCard("Notificaciones"),
+                      onTap: () => onTapCard("Estadísticas"),
                     ),
-                    // =====================================================
                     const SizedBox(height: 25),
                     _AnimatedCard(
                       color: Colors.deepOrange.shade400,
@@ -180,22 +175,16 @@ class _HomeContent extends StatelessWidget {
   }
 }
 
-// ===================================================
-// NUEVO WIDGET: INDICADOR DE TAREAS DE HOY (VACA)
-// ===================================================
-
 class _TodayTasksIndicator extends StatelessWidget {
   final bool darkMode;
   final VoidCallback onTap;
 
   const _TodayTasksIndicator({required this.darkMode, required this.onTap});
 
-  // Stream para obtener el conteo de tareas de hoy
   Stream<int> _getTodayTasksCount() {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return Stream.value(0);
 
-    // Definir el inicio y el final de hoy
     final now = DateTime.now();
     final startOfToday = DateTime(now.year, now.month, now.day);
     final endOfToday = DateTime(now.year, now.month, now.day, 23, 59, 59);
@@ -204,16 +193,13 @@ class _TodayTasksIndicator extends StatelessWidget {
         .collection("users")
         .doc(uid)
         .collection("notificaciones")
-        // Filtra las tareas cuya fecha límite esté dentro de hoy
         .where("fecha_limite", isGreaterThanOrEqualTo: startOfToday)
         .where("fecha_limite", isLessThanOrEqualTo: endOfToday)
-        .where("tipo", isEqualTo: "tarea") // Asegura que solo cuente tareas
+        .where("tipo", isEqualTo: "tarea")
         .snapshots()
         .map((snapshot) {
-          // Contar solo las que no estén marcadas como completadas/leídas
-          // Si el campo 'leida' existe y es false, lo cuenta.
-          return snapshot.docs.where((doc) => (doc.data()['leida'] ?? false) == false).length;
-        });
+      return snapshot.docs.where((doc) => (doc.data()['leida'] ?? false) == false).length;
+    });
   }
 
   @override
@@ -223,8 +209,6 @@ class _TodayTasksIndicator extends StatelessWidget {
       initialData: 0,
       builder: (context, snapshot) {
         final count = snapshot.data ?? 0;
-        
-        // Define el indicador de notificación (Vaca o punto)
         final indicatorWidget = count > 0
             ? Container(
                 padding: const EdgeInsets.all(4),
@@ -233,30 +217,25 @@ class _TodayTasksIndicator extends StatelessWidget {
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white, width: 2),
                 ),
-                // Icono de vaca para sustituir al punto rojo (Icons.filter_vintage para cara de vaca)
-                child: const Icon(Icons.filter_vintage_outlined, color: Colors.white, size: 14), 
+                child: const Icon(Icons.filter_vintage_outlined, color: Colors.white, size: 14),
               )
             : null;
 
         return _AnimatedCard(
           color: Colors.orange.shade600,
           icon: Icons.notifications_active_rounded,
-          title: "Notificaciones",
-          subtitle: count > 0 
-              ? "Tienes $count tarea(s) pendiente(s) para hoy" 
+          title: "Estadísticas",
+          subtitle: count > 0
+              ? "Tienes $count tarea(s) pendiente(s) para hoy"
               : "Revisa tus tareas de hoy",
           onTap: onTap,
           darkMode: darkMode,
-          indicator: indicatorWidget, // Pasa el icono de vaca/punto
+          indicator: indicatorWidget,
         );
       },
     );
   }
 }
-
-// ===================================================
-// MODIFICACIÓN EN _AnimatedCard para aceptar el indicador
-// ===================================================
 
 class _AnimatedCard extends StatefulWidget {
   final Color color;
@@ -265,7 +244,7 @@ class _AnimatedCard extends StatefulWidget {
   final String subtitle;
   final VoidCallback onTap;
   final bool darkMode;
-  final Widget? indicator; // Campo para el indicador de notificación
+  final Widget? indicator;
 
   const _AnimatedCard({
     required this.color,
@@ -274,7 +253,7 @@ class _AnimatedCard extends StatefulWidget {
     required this.subtitle,
     required this.onTap,
     required this.darkMode,
-    this.indicator, // Hazlo opcional
+    this.indicator,
   });
 
   @override
@@ -287,9 +266,8 @@ class _AnimatedCardState extends State<_AnimatedCard> {
   @override
   Widget build(BuildContext context) {
     final bgColor = widget.darkMode ? Colors.grey.shade900 : Colors.white;
-    final textColor = widget.darkMode
-        ? Colors.white.withOpacity(0.9)
-        : const Color(0xFF5A3E1B);
+    final textColor =
+        widget.darkMode ? Colors.white.withOpacity(0.9) : const Color(0xFF5A3E1B);
 
     return GestureDetector(
       onTapDown: (_) => setState(() => _scale = 0.97),
@@ -319,9 +297,8 @@ class _AnimatedCardState extends State<_AnimatedCard> {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              // === Contenedor del ícono principal con el indicador de notificación ===
               Stack(
-                clipBehavior: Clip.none, // Permite que el indicador salga del borde
+                clipBehavior: Clip.none,
                 children: [
                   Container(
                     decoration: BoxDecoration(
@@ -332,14 +309,9 @@ class _AnimatedCardState extends State<_AnimatedCard> {
                     child: Icon(widget.icon, size: 36, color: widget.color),
                   ),
                   if (widget.indicator != null)
-                    Positioned(
-                      top: -4,
-                      right: -4,
-                      child: widget.indicator!,
-                    ),
+                    Positioned(top: -4, right: -4, child: widget.indicator!),
                 ],
               ),
-              // ====================================================================
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -368,11 +340,8 @@ class _AnimatedCardState extends State<_AnimatedCard> {
   }
 }
 
-// --- Resto de clases como _HeaderSection, _SettingsPage, _Particle, _ParticlePainter se mantienen igual ---
-
 class _HeaderSection extends StatelessWidget {
   final bool darkMode;
-  // ... (código original de _HeaderSection) ...
   const _HeaderSection({required this.darkMode});
   @override
   Widget build(BuildContext context) {
@@ -448,7 +417,6 @@ class _HeaderSection extends StatelessWidget {
 class _SettingsPage extends StatelessWidget {
   final bool darkMode;
   final Function(bool) onToggleDarkMode;
-  // ... (código original de _SettingsPage) ...
   const _SettingsPage({
     required this.darkMode,
     required this.onToggleDarkMode,
@@ -494,7 +462,6 @@ class _SettingsPage extends StatelessWidget {
               color: darkMode ? Colors.white54 : Colors.black54,
             ),
             onTap: () {
-              // Navegación a la página de perfil corregida
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -550,7 +517,6 @@ class _SettingsPage extends StatelessWidget {
             onTap: () async {
               try {
                 await FirebaseAuth.instance.signOut();
-                // Asume que LoginScreen está definida en InicioS.dart
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -577,7 +543,7 @@ class _Particle {
   late double y;
   late double radius;
   late double speed;
-  // ... (código original de _Particle) ...
+
   _Particle() {
     final random = Random();
     x = random.nextDouble();
@@ -591,11 +557,13 @@ class _ParticlePainter extends CustomPainter {
   final List<_Particle> particles;
   final double progress;
   final Color color;
-  // ... (código original de _ParticlePainter) ...
+
   _ParticlePainter(this.particles, this.progress, this.color);
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..color = color.withOpacity(0.15);
+
     for (final p in particles) {
       final dx = (p.x * size.width +
               sin(progress * 2 * pi + p.x * 2 * pi) * 10) %
@@ -603,9 +571,11 @@ class _ParticlePainter extends CustomPainter {
       final dy = (p.y * size.height +
               cos(progress * 2 * pi + p.y * 2 * pi) * 10) %
           size.height;
+
       canvas.drawCircle(Offset(dx, dy), p.radius, paint);
     }
   }
+
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
